@@ -9,7 +9,7 @@ x =Heart.drop(columns=['HeartDisease'])
 y =Heart.HeartDisease
 HeartDisease = y
 model = GaussianNB()
-model.fit(X, y)  # ฝึกโมเดลล่วงหน้า
+model.fit(x, y)  # ฝึกโมเดลล่วงหน้า
 
 # ตั้งค่าหน้าเว็บ Streamlit
 st.title("Naïve Bayes Classifier - ตรวจสอบการเป็นโรคหัวใจ")
