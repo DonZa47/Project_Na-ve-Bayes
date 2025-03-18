@@ -1,83 +1,49 @@
-from sklearn.neighbors import KNeighborsClassifier
 import streamlit as st
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.model_selection import train_test_split
 
-st.title("🐷🐷🐷Website Developing using Python🐷🐷")
-st.header("🍖🍖Website Developing using Python🍖🍖")
+# 1️⃣ โหลดชุดข้อมูลตัวอย่าง (Spam/Ham Dataset)
+data = {
+    "text": ["Free money now!!!", "Call me tomorrow", "Win a lottery!", 
+             "Meeting at 10 AM", "Congratulations! You won a prize!", 
+             "Let's go to lunch", "Get free rewards now!", "How are you?",
+             "Click here to claim your free gift!", "Hey, are you free tonight?"],
+    "label": [1, 0, 1, 0, 1, 0, 1, 0, 1, 0]  # 1 = Spam, 0 = Ham
+}
+df = pd.DataFrame(data)
 
-st.image('./img/pic.jpg')
-st.subheader("ธนดล จันทวงค์")
-col1,col2,col3 = st.columns(3)
-with col1:
-    st.header("tuilpa")
-    st.image("./img/fo1.jpg")
+# 2️⃣ แปลงข้อความเป็นเวกเตอร์
+vectorizer = CountVectorizer()
+X = vectorizer.fit_transform(df["text"])
+y = df["label"]
 
-with col2:
-    st.header("Helianthus annuus")
-    st.image("./img/fo2.jpg")
+# 3️⃣ แบ่งข้อมูล Train/Test และฝึกโมเดล Naïve Bayes
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+model = MultinomialNB()
+model.fit(X_train, y_train)
 
-with col3:
-    st.header("Myostis")
-    st.image("./img/fo3.jpg")
-    
-html_7 = """
-<div style="background-color:#12c29e;padding:15px;border-radius:15px 15px 15px 15px;border-style:'solid';border-color:black">
-<center><h5>สถิติข้อมูลดอกไม้</h5></center>
-</div>
-"""
-st.markdown(html_7, unsafe_allow_html=True)
-st.markdown("")
-dt = pd.read_csv("./data/iris-3.csv")
-st.write(dt.head(10))
-st.subheader("ข้อมูลส่วนสุดท้าย 10 แถว")
-st.write(dt.tail(10))
+# 🎈 Streamlit UI
+st.title("📩 Spam Detection with Naïve Bayes")
+st.write("🔍 **พิมพ์ข้อความที่ต้องการตรวจสอบ** ว่าเป็น **Spam หรือไม่**")
 
-dt1 =dt['petallength'].sum()
-dt2 =dt['petalwidth'].sum()
-dt3 =dt['sepallength'].sum()
-dt4 =dt['sepalwidth'].sum()
+# รับข้อความจากผู้ใช้
+user_input = st.text_area("พิมพ์ข้อความที่นี่ (พิมพ์ได้หลายบรรทัด)", "")
 
-dx = [dt1,dt2,dt3,dt4]
-dx2 = pd.DataFrame(dx, index=["d1","d2","d3","d4"])
-
-if st.button("แสดงการจินตทัศน์ข้อมูล"):
-    st.bar_chart(dx2)
-    st.button("ไม่แสดงข้อมูล")
-else:
-    st.write("ไม่แสดงข้อมูล")
-
-html_8 = """
-<div style="background-color:#12c29e;padding:15px;border-radius:15px 15px 15px 15px;border-style:'solid';border-color:black">
-<center><h5>ทำนายข้อมูล</h5></center>
-</div>
-"""
-st.markdown(html_8, unsafe_allow_html=True)
-st.markdown("")
-
-pt_len = st.slider("กรุณาเลือกข้อมูล petal.length")
-pt_wd = st.slider("กรุราเลือกข้อมูล petal.width")
-
-sp_len = st.number_input("กรุณาเลือกข้อมูล sepal.length")
-sp_wd = st.number_input("กรุณาเลือกข้อมูล sepal width")
-
-if st.button("ทำนายผล"):
-    #st.write("ทำนาย")
-   dt = pd.read_csv("./data/iris-3.csv") 
-   X = dt.drop('variety', axis=1)
-   y = dt.variety   
-
-   Knn_model = KNeighborsClassifier(n_neighbors=3)
-   Knn_model.fit(X, y)  
-   x_input = np.array([[pt_len, pt_wd, sp_len, sp_wd]])
-   st.write(Knn_model.predict(x_input))
-   out=Knn_model.predict(x_input)
-   if out[0] == 'Setosa':
-    st.image("./img/iris1.jpg")
-   elif out[0] == 'Versicolor':       
-    st.image("./img/iris2.jpg")
-   else:
-    st.image("./img/iris3.jpg")
-else:
-    st.write("ไม่ทำนาย")
+# ถ้าผู้ใช้ป้อนข้อความ
+if st.button("🔎 ทำนายผล"):
+    if user_input.strip():  # ตรวจสอบว่าผู้ใช้ไม่ได้ส่งข้อความว่าง
+        # แปลงข้อความจากผู้ใช้ให้เป็นเวกเตอร์
+        user_texts = user_input.split("\n")  # รองรับหลายบรรทัด
+        user_vectors = vectorizer.transform(user_texts)
+        
+        # ทำนายผลลัพธ์
+        predictions = model.predict(user_vectors)
+        
+        # แสดงผลลัพธ์เป็นตาราง
+        result_df = pd.DataFrame({"ข้อความ": user_texts, "ผลการทำนาย": ["🚨 Spam" if pred == 1 else "✅ Ham" for pred in predictions]})
+        st.write("### 📊 ผลการทำนาย")
+        st.dataframe(result_df, use_container_width=True)
+    else:
+        st.warning("⚠️ กรุณาป้อนข้อความก่อนทำการทำนาย")
