@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.naive_bayes import GaussianNB
 
 # โหลดชุดข้อมูล Iris
-Heart= pd_read('./data/heart2.csv')
+Heart= pd.read_csv('./data/heart2.csv')
 x =Heart.drop(columns=['HeartDisease'])
 y =Heart.HeartDisease
 HeartDisease = y
