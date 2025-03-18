@@ -1,50 +1,37 @@
 import streamlit as st
+import numpy as np
 import pandas as pd
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.datasets import load_iris
 
-# 1️⃣ โหลดชุดข้อมูลตัวอย่าง (Spam/Ham Dataset)
-data = {
-    "text": ["Free money now!!!", "Call me tomorrow", "Win a lottery!", 
-             "Meeting at 10 AM", "Congratulations! You won a prize!", 
-             "Let's go to lunch", "Get free rewards now!", "How are you?",
-             "Click here to claim your free gift!", "Hey, are you free tonight?"],
-    "label": [1, 0, 1, 0, 1, 0, 1, 0, 1, 0]  # 1 = Spam, 0 = Ham
-}
-df = pd.DataFrame(data)
+# โหลดชุดข้อมูล Iris
+iris = load_iris()
+X, y = iris.data, iris.target
+model = GaussianNB()
+model.fit(X, y)  # ฝึกโมเดลล่วงหน้า
 
-# 2️⃣ แปลงข้อความเป็นเวกเตอร์
-vectorizer = CountVectorizer()
-X = vectorizer.fit_transform(df["text"])
-y = df["label"]
+# ตั้งค่าหน้าเว็บ Streamlit
+st.title("Naïve Bayes Classifier - Iris Dataset")
+st.write("ป้อนคุณสมบัติของดอกไม้เพื่อทำนายประเภท")
 
-# 3️⃣ แบ่งข้อมูล Train/Test และฝึกโมเดล Naïve Bayes
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-model = MultinomialNB()
-model.fit(X_train, y_train)
+# รับค่าจากผู้ใช้ผ่าน slider
+sepal_length = st.slider("Sepal Length (cm)", float(X[:,0].min()), float(X[:,0].max()), float(X[:,0].mean()))
+sepal_width = st.slider("Sepal Width (cm)", float(X[:,1].min()), float(X[:,1].max()), float(X[:,1].mean()))
+petal_length = st.slider("Petal Length (cm)", float(X[:,2].min()), float(X[:,2].max()), float(X[:,2].mean()))
+petal_width = st.slider("Petal Width (cm)", float(X[:,3].min()), float(X[:,3].max()), float(X[:,3].mean()))
 
-# 🎈 Streamlit UI
-st.title("📩 Spam Detection with Naïve Bayes")
-st.write("🔍 **พิมพ์ข้อความที่ต้องการตรวจสอบ** ว่าเป็น **Spam หรือไม่**")
+# สร้างอาร์เรย์ข้อมูลจากค่าที่ป้อน
+input_data = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
 
-# รับข้อความจากผู้ใช้
-user_input = st.text_area("พิมพ์ข้อความที่นี่ (พิมพ์ได้หลายบรรทัด)", "")
+# ทำนายผลลัพธ์
+prediction = model.predict(input_data)
+prediction_proba = model.predict_proba(input_data)
 
-# ถ้าผู้ใช้ป้อนข้อความ
-if st.button("🔎 ทำนายผล"):
-    if user_input.strip():  # ตรวจสอบว่าผู้ใช้ไม่ได้ส่งข้อความว่าง
-        # แปลงข้อความจากผู้ใช้ให้เป็นเวกเตอร์
-        user_texts = user_input.split("\n")  # รองรับหลายบรรทัด
-        user_vectors = vectorizer.transform(user_texts)
-        
-        # ทำนายผลลัพธ์
-        predictions = model.predict(user_vectors)
-        
-        # แสดงผลลัพธ์เป็นตาราง
-        result_df = pd.DataFrame({"ข้อความ": user_texts, "ผลการทำนาย": ["🚨 Spam" if pred == 1 else "✅ Ham" for pred in predictions]})
-        st.write("### 📊 ผลการทำนาย")
-        st.dataframe(result_df, use_container_width=True)
-    else:
-        st.warning("⚠️ กรุณาป้อนข้อความก่อนทำการทำนาย")
-else:st.write("ไม่ทำนาย")
+# แสดงผลลัพธ์
+st.subheader("ผลลัพธ์ที่ได้:")
+st.write(f"ชนิดของดอกไม้ที่คาดการณ์: *{iris.target_names[prediction[0]]}*")
+
+# แสดงความน่าจะเป็นของแต่ละคลาส
+st.subheader("ความน่าจะเป็นของแต่ละประเภท:")
+df_proba = pd.DataFrame(prediction_proba, columns=iris.target_names)
+st.dataframe(df_proba.style.format("{:.2%}"))
